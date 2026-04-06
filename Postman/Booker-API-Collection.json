@@ -1,0 +1,486 @@
+{
+  "info": {
+    "_postman_id": "eff022dc-51f5-4508-86ef-ef37f246a39e",
+    "name": "Booker",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "38632317"
+  },
+  "item": [
+    {
+      "name": "Create Booking",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// Genera un número entre 1000 y 9999 y lo guarda en una variable",
+              "const randomId = Math.floor(Math.random() * 9000) + 1000;",
+              "pm.environment.set(\"policy_id\", \"MAJ-\" + randomId);",
+              "console.log(\"ID generado para esta iteración: \" + randomId);",
+              "",
+              "// Formato YYYY-MM-DD",
+              "const today = new Date().toISOString().slice(0, 10);",
+              "pm.environment.set(\"issue_date\", today);",
+              "",
+              "// Útil al inicio de una colección para evitar basura de pruebas viejas",
+              "pm.environment.unset(\"temp_token\");",
+              "pm.environment.unset(\"last_booking_id\");"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// ==========================================",
+              "// 1. PREPARACIÓN DE DATOS",
+              "// ==========================================",
+              "var jsonData = pm.response.json();",
+              "var csvName = pm.iterationData.get(\"firstname\"); // Trae el nombre de la fila actual del CSV",
+              "",
+              "// ==========================================",
+              "// 2. VALIDACIONES TÉCNICAS (API Standard)",
+              "// ==========================================",
+              "pm.test(\"HTTP 200: Conexión exitosa\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Performance: Respuesta menor a 500ms\", function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(500);",
+              "});",
+              "",
+              "pm.test(\"ID Check: Se generó bookingid numérico\", function () {",
+              "    pm.expect(jsonData.bookingid).to.not.be.null;",
+              "    pm.expect(jsonData.bookingid).to.be.a('number');",
+              "});",
+              "",
+              "// ==========================================",
+              "// 3. BUSINESS RULES (Lógica Majesco)",
+              "// ==========================================",
+              "",
+              "// --- REGLA: INTEGRIDAD DE NOMBRE ---",
+              "pm.test(\"Majesco Rule: Validando registro de: \" + csvName, function () {",
+              "    // Comparamos el dato real del JSON contra el dato real del CSV",
+              "    pm.expect(jsonData.booking.firstname).to.eql(csvName);",
+              "});",
+              "",
+              "pm.test(\"Majesco Rule: El nombre no debe ser numérico\", function () {",
+              "    pm.expect(isNaN(jsonData.booking.firstname)).to.be.true;",
+              "});",
+              "",
+              "// --- REGLA: LÓGICA DE FECHAS ---",
+              "pm.test(\"Majesco Rule: Vigencia válida (Checkout > Checkin)\", function () {",
+              "    var checkin = new Date(jsonData.booking.bookingdates.checkin);",
+              "    var checkout = new Date(jsonData.booking.bookingdates.checkout);",
+              "    pm.expect(checkout).to.be.above(checkin, \"Error: Fecha de fin no puede ser menor al inicio\");",
+              "});",
+              "",
+              "// --- REGLA: FINANCIERA ---",
+              "pm.test(\"Majesco Rule: Monto total positivo\", function () {",
+              "    pm.expect(jsonData.booking.totalprice).to.be.at.least(0, \"Alerta: Monto negativo detectado\");",
+              "});",
+              "",
+              "// ==========================================",
+              "// 4. PERSISTENCIA Y VARIABLES",
+              "// ==========================================",
+              "if (pm.response.code === 200 && jsonData.booking.totalprice >= 0) {",
+              "    // Guardamos para flujos encadenados (Get/Put/Delete)",
+              "    pm.environment.set(\"last_booking_id\", jsonData.bookingid);",
+              "    pm.environment.set(\"env_firstname\", jsonData.booking.firstname);",
+              "    pm.environment.set(\"env_lastname\", jsonData.booking.lastname);",
+              "    pm.environment.set(\"env_totalprice\", jsonData.booking.totalprice);",
+              "    ",
+              "    console.log(\"✅ Registro exitoso en Iteración: \" + pm.info.iteration);",
+              "} else {",
+              "    console.log(\"❌ Error de Negocio en Iteración: \" + pm.info.iteration);",
+              "}",
+              ""
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"firstname\" : \"{{firstname}}\", \n    \"lastname\" : \"Doe\",\n    \"totalprice\" : 111,\n    \"depositpaid\" : true,\n    \"bookingdates\" : {\n        \"checkin\" : \"2018-01-01\",\n        \"checkout\" : \"2019-01-01\"\n    },\n    \"additionalneeds\" : \"Breakfast\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://restful-booker.herokuapp.com/booking",
+          "protocol": "https",
+          "host": [
+            "restful-booker",
+            "herokuapp",
+            "com"
+          ],
+          "path": [
+            "booking"
+          ]
+        },
+        "description": "Generated from cURL: curl -X POST \\\n  https://restful-booker.herokuapp.com/booking \\\n  -H 'Content-Type: application/json' \\\n  -d '{\n    \"firstname\" : \"Jim\",\n    \"lastname\" : \"Brown\",\n    \"totalprice\" : 111,\n    \"depositpaid\" : true,\n    \"bookingdates\" : {\n        \"checkin\" : \"2018-01-01\",\n        \"checkout\" : \"2019-01-01\"\n    },\n    \"additionalneeds\" : \"Breakfast\"\n}'"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Booking",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code es 200 - OK\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// 1. Traemos la respuesta actual del GET",
+              "var jsonData = pm.response.json();",
+              "",
+              "// 2. Traemos lo guardado en las gavetas (Variables de Entorno)",
+              "var nombreGuardado = pm.environment.get(\"env_firstname\");",
+              "var precioGuardado = pm.environment.get(\"env_totalprice\");",
+              "",
+              "// --- NUEVA SECCIÓN: IMPRESIÓN EN CONSOLA ---",
+              "console.log(\"-----------------------------------------\");",
+              "console.log(\"🔍 REVISIÓN DE CONCILIACIÓN (MAJESCO)\");",
+              "console.log(\"👤 Nombre (POST/Gaveta): \" + nombreGuardado);",
+              "console.log(\"👤 Nombre (GET/Servidor): \" + jsonData.firstname);",
+              "console.log(\"💰 Precio (POST/Gaveta): \" + precioGuardado);",
+              "console.log(\"💰 Precio (GET/Servidor): \" + jsonData.totalprice);",
+              "console.log(\"-----------------------------------------\");",
+              "",
+              "// 3. VALIDACIÓN (Assertions)",
+              "pm.test(\"Conciliación: El precio en el GET coincide con el del POST\", function () {",
+              "    var precioLimpio = parseFloat(precioGuardado);",
+              "    var precioServidor = parseFloat(jsonData.totalprice);",
+              "",
+              "    pm.expect(precioServidor).to.eql(precioLimpio, ",
+              "        `Error de Conciliación: Se esperaba ${precioLimpio} pero el servidor devolvió ${precioServidor}`);",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://restful-booker.herokuapp.com/booking/{{last_booking_id}}",
+          "protocol": "https",
+          "host": [
+            "restful-booker",
+            "herokuapp",
+            "com"
+          ],
+          "path": [
+            "booking",
+            "{{last_booking_id}}"
+          ]
+        },
+        "description": "Generated from cURL: curl -i https://restful-booker.herokuapp.com/booking/1"
+      },
+      "response": []
+    },
+    {
+      "name": "Update Booking ",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "// 1. Generar un precio aleatorio entre 100 y 5000 (Sin decimales complejos)",
+              "const randomPrice = Math.floor(Math.random() * (5000 - 100 + 1)) + 100;",
+              "pm.environment.set(\"env_updated_price\", randomPrice);",
+              "",
+              "// 2. Generar una necesidad adicional aleatoria (Tipo Majesco)",
+              "const coberturas = [\"Seguro Todo Riesgo\", \"Responsabilidad Civil\", \"Asistencia Médica\", \"Capa Global\"];",
+              "const randomCobertura = coberturas[Math.floor(Math.random() * coberturas.length)];",
+              "pm.environment.set(\"env_updated_needs\", randomCobertura);",
+              "",
+              "console.log(\"🎲 Valores aleatorios para el PUT: Price=\" + randomPrice + \", Needs=\" + randomCobertura);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "",
+              "// A. Validar que el servidor aceptó la actualización (200 OK)",
+              "pm.test(\"Status 200 - Actualización exitosa\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "// B. Validar que el precio actualizado sea el que enviamos",
+              "pm.test(\"Integridad: El precio actualizado coincide\", function () {",
+              "    pm.expect(jsonData.totalprice).to.eql(pm.environment.get(\"env_updated_price\"));",
+              "});",
+              "",
+              "// C. Validar que el nombre no se haya borrado (Regresión)",
+              "pm.test(\"Regresión: El nombre sigue presente tras el PUT\", function () {",
+              "    pm.expect(jsonData.firstname).to.not.be.null;",
+              "});",
+              "",
+              "pm.test(\"Performance: Endoso procesado en menos de 400ms\", function () {",
+              "    pm.expect(pm.response.responseTime).to.be.below(400);",
+              "});",
+              "",
+              "var jsonData = pm.response.json();",
+              "",
+              "// --- REGLAS DE ENDOSO DE FECHAS ---",
+              "",
+              "pm.test(\"Endoso: Formato de fecha válido (ISO)\", function () {",
+              "    const dateRegEx = /^\\d{4}-\\d{2}-\\d{2}$/;",
+              "    pm.expect(jsonData.bookingdates.checkin).to.match(dateRegEx, \"Error: El formato de Checkin no es YYYY-MM-DD\");",
+              "    pm.expect(jsonData.bookingdates.checkout).to.match(dateRegEx, \"Error: El formato de Checkout no es YYYY-MM-DD\");",
+              "});",
+              "",
+              "pm.test(\"Endoso: Fecha de Fin posterior a Fecha de Inicio\", function () {",
+              "    var checkin = new Date(jsonData.bookingdates.checkin);",
+              "    var checkout = new Date(jsonData.bookingdates.checkout);",
+              "    ",
+              "    pm.expect(checkout).to.be.above(checkin, \"Error Crítico: El endoso permite que la póliza venza antes de iniciar\");",
+              "});",
+              "",
+              "pm.test(\"Endoso: Duración mínima de 1 día\", function () {",
+              "    var checkin = new Date(jsonData.bookingdates.checkin).getTime();",
+              "    var checkout = new Date(jsonData.bookingdates.checkout).getTime();",
+              "    var diferenciaDias = (checkout - checkin) / (1000 * 3600 * 24);",
+              "    ",
+              "    pm.expect(diferenciaDias).to.be.at.least(1, \"El endoso no puede generar una póliza de 0 días\");",
+              "});",
+              "",
+              "// Test de Integridad de Formato",
+              "pm.test(\"Validación de Contrato: Fecha debe ser YYYY-MM-DD\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    // Expresión regular para validar el formato exacto de guiones",
+              "    const regexFecha = /^\\d{4}-\\d{2}-\\d{2}$/;",
+              "    ",
+              "    pm.expect(jsonData.bookingdates.checkin).to.match(regexFecha, \"Error: El servidor devolvió un formato de fecha inesperado\");",
+              "});"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "token=abc123"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"firstname\" : \"{{env_firstname}}\",\n    \"lastname\" : \"{{$randomLastName}}\",\n    \"totalprice\" : {{env_updated_price}},\n    \"depositpaid\" : true,\n    \"bookingdates\" : {\n        \"checkin\" : \"{{$randomDatePast}}\",\n        \"checkout\" : \"{{$randomDateFuture}}\"\n    },\n    \"additionalneeds\" : \"{{env_updated_needs}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "https://restful-booker.herokuapp.com/booking/{{last_booking_id}}",
+          "protocol": "https",
+          "host": [
+            "restful-booker",
+            "herokuapp",
+            "com"
+          ],
+          "path": [
+            "booking",
+            "{{last_booking_id}}"
+          ]
+        },
+        "description": "Generated from cURL: curl -X PUT \\\n  https://restful-booker.herokuapp.com/booking/1 \\\n  -H 'Content-Type: application/json' \\\n  -H 'Accept: application/json' \\\n  -H 'Cookie: token=abc123' \\\n  -d '{\n    \"firstname\" : \"James\",\n    \"lastname\" : \"Brown\",\n    \"totalprice\" : 111,\n    \"depositpaid\" : true,\n    \"bookingdates\" : {\n        \"checkin\" : \"2018-01-01\",\n        \"checkout\" : \"2019-01-01\"\n    },\n    \"additionalneeds\" : \"Breakfast\"\n}'"
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Booking",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// 1. Validar el Status Code (201 en Restful-Booker para Delete)",
+              "pm.test(\"Status 201 - Registro eliminado correctamente\", function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "",
+              "// 2. Validar que la respuesta sea un texto simple (Confirmación)",
+              "pm.test(\"Confirmación de borrado: Respuesta es 'Created'\", function () {",
+              "    pm.expect(pm.response.text()).to.include(\"Created\");",
+              "});",
+              "",
+              "// 3. Script Pro: Limpiar las gavetas (Variables)",
+              "// Al borrar el registro, la variable ya no es útil. La limpiamos para no causar errores luego.",
+              "pm.environment.unset(\"last_booking_id\");",
+              "console.log(\"♻️ Variable 'last_booking_id' eliminada del entorno.\");"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "token=abc123"
+          }
+        ],
+        "url": {
+          "raw": "https://restful-booker.herokuapp.com/booking/{{last_booking_id}}",
+          "protocol": "https",
+          "host": [
+            "restful-booker",
+            "herokuapp",
+            "com"
+          ],
+          "path": [
+            "booking",
+            "{{last_booking_id}}"
+          ]
+        },
+        "description": "Generated from cURL: curl -X DELETE \\\n  https://restful-booker.herokuapp.com/booking/1 \\\n  -H 'Content-Type: application/json' \\\n  -H 'Cookie: token=abc123'"
+      },
+      "response": []
+    },
+    {
+      "name": "Get Booking Delete",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// 1. El éxito aquí es que el recurso NO EXISTA",
+              "pm.test(\"Status 404 - Confirmado: El registro ya no existe en Majesco\", function () {",
+              "    pm.response.to.have.status(404);",
+              "});",
+              "",
+              "// 2. Validar el mensaje de error del servidor",
+              "pm.test(\"Mensaje de respuesta es 'Not Found'\", function () {",
+              "    pm.expect(pm.response.text()).to.include(\"Not Found\");",
+              "});",
+              "",
+              "// 3. Log de Consola para tu reporte",
+              "if (pm.response.code === 404) {",
+              "    console.log(\"✅ Verificación Exitosa: El ID \" + pm.environment.get(\"last_booking_id\") + \" fue purgado de la base de datos.\");",
+              "} else {",
+              "    console.log(\"❌ ALERTA DE INTEGRIDAD: El registro aún es consultable tras el DELETE.\");",
+              "}"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://restful-booker.herokuapp.com/booking/{{last_booking_id}}",
+          "protocol": "https",
+          "host": [
+            "restful-booker",
+            "herokuapp",
+            "com"
+          ],
+          "path": [
+            "booking",
+            "{{last_booking_id}}"
+          ]
+        },
+        "description": "Generated from cURL: curl -i https://restful-booker.herokuapp.com/booking/1"
+      },
+      "response": []
+    }
+  ],
+  "auth": {
+    "type": "basic",
+    "basic": [
+      {
+        "key": "password",
+        "value": "{{password}}",
+        "type": "string"
+      },
+      {
+        "key": "username",
+        "value": "{{username}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "Booker",
+      "value": ""
+    }
+  ]
+}

@@ -1,14 +1,13 @@
-# API Automation Framework - Majesco Core Integration
-
-## 🚀 Project Overview
-This repository contains an end-to-end automation framework for **Majesco Insurance Core**.
-
-## 🛠️ Tech Stack
-* **Testing:** SoapUI (SOAP), Postman (REST).
-* **Scripting:** Groovy (Assertions).
+## 🛠️ Tech Stack & Projects
+* **SOAP Testing:** Football-SOAP project with Groovy Assertions.
+* **REST Testing (Postman):** Restful-Booker Collection with Environment 
+variables.
+* **Scripting:** Groovy (XML) & JavaScript (JSON).
 * **Database:** SQL Server (JDBC Cross-validation).
-* **AI:** Ollama (Local LLM: Qwen2.5-Coder) for Synthetic Data.
+* **AI Integration:** Ollama (Qwen2.5-Coder) for Synthetic Data.
 
-## 🌟 Key Features
-1. **AI-Data Provisioning:** Dynamic generation of stadium names via Ollama.
-2. **SQL Cross-Check:** Real-time verification between WSDL response and Database backend.
+## 📬 Postman Features
+* **Automated Flow:** Scripts to capture `bookingid` and reuse it in 
+GET/DELETE requests.
+* **Environment Ready:** Includes `Booker-Environment.json` for instant 
+execution.

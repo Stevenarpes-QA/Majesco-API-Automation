@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<con:soapui-project id="29264ac4-2a10-41e5-9f52-2849b5494d46" activeEnvironment="Default" name="REST Project 1" resourceRoot="" soapui-version="5.9.1" abortOnError="false" runType="SEQUENTIAL" xmlns:con="http://eviware.com/soapui/config"><con:settings/><con:interface xsi:type="con:RestService" id="55ac9044-c27f-489b-8970-8da45cf3a805" wadlVersion="http://wadl.dev.java.net/2009/02" name="https://restcountries.com" type="rest" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><con:settings/><con:definitionCache type="TEXT" rootPart=""/><con:endpoints><con:endpoint>https://restcountries.com</con:endpoint></con:endpoints><con:resource name="India" path="/v3.1/alpha/${#TestCase#TargetCountry}" id="0f17a38b-55b3-434a-87c8-687a5f58764e"><con:settings/><con:parameters/><con:method name="India 1" id="515ce7ef-5fe9-4f39-b51b-5c52d534f2ab" method="GET"><con:settings/><con:parameters/><con:representation type="RESPONSE"><con:mediaType>application/json</con:mediaType><con:status>200</con:status><con:params/><con:element>Response</con:element></con:representation><con:representation type="FAULT"><con:mediaType>application/json</con:mediaType><con:status>400</con:status><con:params/><con:element xmlns:ind="https://restcountries.com/v3.1/name/india">ind:Fault</con:element></con:representation><con:request name="Request 1" id="75735faa-000e-4a77-be14-3f97cc3f96c3" mediaType="application/json"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:endpoint>https://restcountries.com</con:endpoint><con:request/><con:originalUri>https://restcountries.com/v3.1/name/india</con:originalUri><con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:parameters/></con:request></con:method></con:resource></con:interface><con:testSuite id="c8103e3f-390b-4e3a-a57c-6ae812946e94" name="CountriesTestSuite"><con:description>TestSuite generated for REST Service [https://restcountries.com]</con:description><con:settings/><con:runType>SEQUENTIAL</con:runType><con:testCase id="72d21267-ed52-4b80-9674-f22c025166cd" failOnError="true" failTestCaseOnErrors="true" keepSession="false" maxResults="0" name="TestCase1" searchProperties="true"><con:description>TestCase generated for REST Resource [India] located at [/v3.1/name/india]</con:description><con:settings/><con:testStep type="groovy" name="GenerateCountries2" id="ac877712-28c3-4bf0-92ff-2ee2ba023b8c"><con:settings/><con:config><script>// 1. Lista GIGANTE de países (Majesco es global, ¡metamos más!)
+def countryCodes = ["in", "io", "us", "co", "mx", "ca", "gb", "br", "ar", "es", "fr", "de", "it", "jp", "au", "kr", "cl", "pe", "pa", "uy"]
+
+// 2. Traer la "Memoria" de la Suite (donde guardamos los últimos usados)
+def memoria = testRunner.testCase.testSuite.getPropertyValue("HistorialPaises") ?: ""
+def listaMemoria = memoria.split(",") as List
+
+def randomCode = ""
+def intentos = 0
+
+// 3. Lógica de "No Repetición" (Intentar hasta 10 veces buscar uno nuevo)
+while (intentos &lt; 10) {
+    randomCode = countryCodes[new Random().nextInt(countryCodes.size())]
+    if (!listaMemoria.contains(randomCode)) {
+        break // ¡Encontramos uno que no se ha usado recientemente!
+    }
+    intentos++
+}
+
+// 4. Actualizar la Memoria (Guardar los últimos 6 para que no se repitan)
+listaMemoria.add(0, randomCode) // Lo metemos al principio
+if (listaMemoria.size() > 6) {
+    listaMemoria = listaMemoria.take(6) // Solo recordamos los últimos 6
+}
+testRunner.testCase.testSuite.setPropertyValue("HistorialPaises", listaMemoria.join(","))
+
+// 5. Inyectar al TestCase
+testRunner.testCase.setPropertyValue("TargetCountry", randomCode)
+
+log.info "--- Majesco Smart Generator ---"
+log.info "País seleccionado: ${randomCode.toUpperCase()}"
+log.info "Memoria actual (No repetir): ${listaMemoria}"</script></con:config></con:testStep><con:testStep type="restrequest" name="Request 1" id="7c5cb326-abd4-41ed-88c0-e24bc503048f"><con:settings/><con:config service="https://restcountries.com" resourcePath="/v3.1/alpha/${#TestCase#TargetCountry}" methodName="India 1" xsi:type="con:RestRequestStep" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><con:restRequest name="Request 1" id="75735faa-000e-4a77-be14-3f97cc3f96c3" mediaType="application/json"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:endpoint>https://restcountries.com</con:endpoint><con:request/><con:originalUri>https://restcountries.com/v3.1/name/india</con:originalUri><con:assertion type="GroovyScriptAssertion" id="40206bc0-8cc0-48e2-8bda-550d75dbd2a8" name="Validar Moneda"><con:configuration><scriptText>import groovy.json.JsonSlurper
+def json = new JsonSlurper().parseText(messageExchange.responseContent)[0]
+
+// 1. Extraer dinámicamente la primera moneda del objeto 'currencies'
+def currencyKey = json.currencies.keySet()[0] 
+def currencyData = json.currencies."${currencyKey}"
+
+log.info "--- Validando Moneda para el país: ${json.name.common} ---"
+log.info "Código detectado: ${currencyKey} | Nombre: ${currencyData.name}"
+
+// Assertions Dinámicos
+assert currencyKey != null : "❌ Error: El código de moneda (ISO) es nulo."
+assert currencyData.name != null : "❌ Error: La moneda no tiene un nombre definido."
+assert currencyData.symbol != null : "❌ Error: Falta el símbolo de moneda para reportes financieros."</scriptText></con:configuration></con:assertion><con:assertion type="GroovyScriptAssertion" id="7d32d694-615d-43d0-a775-c370ffa7298e" name="Validar Codigo Postal"><con:configuration><scriptText>import groovy.json.JsonSlurper
+def json = new JsonSlurper().parseText(messageExchange.responseContent)[0]
+
+log.info "--- Validando Reglas de Dirección (Postal Code) ---"
+
+// Validamos si el país exige formato postal en el Core
+if (json.postalCode != null) {
+    def format = json.postalCode.format
+    def regex = json.postalCode.regex
+    
+    log.info "País con reglas postales: Formato [${format}]"
+    assert format != null : "❌ Error: El formato postal existe pero está vacío."
+} else {
+    log.info "País sin reglas postales obligatorias (Acepta texto libre)."
+}</scriptText></con:configuration></con:assertion><con:assertion type="GroovyScriptAssertion" id="1d799f2b-45d6-415e-a6e1-abc273e33ebf" name="Validar Poblacion"><con:configuration><scriptText>import groovy.json.JsonSlurper
+def json = new JsonSlurper().parseText(messageExchange.responseContent)[0]
+
+def poblacion = json.population
+def nombrePais = json.name.common
+
+log.info "--- Validando Análisis de Riesgo ---"
+log.info "Población de ${nombrePais}: ${poblacion}"
+
+// Regla de Negocio: Si el país es independiente, debe tener población para ser asegurable
+if (json.independent == true) {
+    assert poblacion > 0 : "❌ Error de Riesgo: ${nombrePais} es independiente pero reporta 0 habitantes. Datos inconsistentes para el Core."
+} else {
+    log.info "Territorio no independiente. Se permite población baja o cero bajo reglas especiales."
+}</scriptText></con:configuration></con:assertion><con:assertion type="GroovyScriptAssertion" id="47f7c3b4-d93d-408e-8830-32fbf9b681d3" name="Validación de &quot;Data Consistency&quot;"><con:configuration><scriptText>import groovy.json.JsonSlurper
+def json = new JsonSlurper().parseText(messageExchange.responseContent)[0]
+
+def region = json.region
+def moneda = json.currencies.keySet()[0]
+
+log.info "Validando Consistencia: Region [${region}] vs Moneda [${moneda}]"
+
+// Regla de Negocio: Si la región es Americas, la moneda no puede ser JPY (Yen)
+if (region == "Americas") {
+    assert moneda != "JPY" : "❌ Error de Consistencia: Un país en Americas no puede tener Yen como moneda principal en el Core."
+}
+log.info "✅ Consistencia regional validada."</scriptText></con:configuration></con:assertion><con:assertion type="GroovyScriptAssertion" id="ba12c6ec-fd15-4a0a-b566-1183b9858736" name="Validación de &quot;Nested Arrays&quot;"><con:configuration><scriptText>import groovy.json.JsonSlurper
+def json = new JsonSlurper().parseText(messageExchange.responseContent)[0]
+
+def sufijos = json.idd.suffixes
+
+log.info "Validando lista de prefijos telefónicos (IDD Suffixes)..."
+
+// 1. Validar que la lista de sufijos exista y tenga al menos un elemento
+assert sufijos instanceof List : "❌ Error: Suffixes debería ser una lista (Array)."
+assert sufijos.size() > 0 : "❌ Error: El país debe tener al menos un sufijo telefónico para contacto."
+
+// 2. Validar que el primer sufijo sea un número (en formato String)
+assert sufijos[0].isNumber() : "❌ Error: El sufijo [${sufijos[0]}] no es un valor numérico válido."
+
+log.info "✅ Estructura de listas anidadas validada (Total: ${sufijos.size()} prefijos)."</scriptText></con:configuration></con:assertion><con:assertion type="GroovyScriptAssertion" id="ff0ec8a4-428b-4faa-9655-f5b6d5084528" name="Prueba de &quot;Boundary Value Analysis&quot;"><con:configuration><scriptText>import groovy.json.JsonSlurper
+def json = new JsonSlurper().parseText(messageExchange.responseContent)[0]
+
+def pop = json.population
+
+log.info "Analizando Segmentación de Mercado para: " + json.name.common
+
+if (pop > 100000000) { // Mas de 100 Millones
+    log.info "Mercado de Alto Volumen detectado."
+    // Regla: Mercados grandes DEBEN tener un link de bandera PNG válido
+    assert json.flags.png.contains("http") : "❌ Error: País de alto volumen sin recurso visual (Flag PNG) en el Core."
+} else {
+    log.info "Mercado de Volumen Estándar."
+}</scriptText></con:configuration></con:assertion><con:assertion type="GroovyScriptAssertion" id="72ad8444-11bb-401d-bf66-416818ad633f" name="Riesgo Demográfico"><con:configuration><scriptText>import groovy.json.JsonSlurper
+def json = new JsonSlurper().parseText(messageExchange.responseContent)[0]
+
+def poblacion = json.population
+def nombre = json.name.common
+
+log.info "--- Analizando Riesgo de Mercado: ${nombre} ---"
+
+if (poblacion > 40000000) {
+    log.info "⚠️ ALERTA DE RIESGO: Población masiva detectada (${poblacion})."
+    // En Majesco, esto activaría una regla de 'High Exposure'
+    assert json.status == "officially-assigned" : "Error: Mercados de alto riesgo deben estar plenamente regulados."
+} else {
+    log.info "Mercado de riesgo controlado."
+}</scriptText></con:configuration></con:assertion><con:assertion type="GroovyScriptAssertion" id="8567291d-9806-4602-9dcb-eec539fa059a" name="Regla de &quot;Cuidado Especial&quot;"><con:configuration><scriptText>import groovy.json.JsonSlurper
+def json = new JsonSlurper().parseText(messageExchange.responseContent)[0]
+
+// Supongamos que el índice 'Gini' representa la 'Complejidad del Riesgo' (como la edad)
+if (json.gini != null) {
+    def valorRiesgo = json.gini.values()[0] // Tomamos el primer valor del mapa Gini
+    log.info "Índice de Complejidad detectado: ${valorRiesgo}"
+
+    if (valorRiesgo > 40) {
+        log.info "🛑 REQUIERE REVISIÓN MANUAL: Riesgo excede los límites automáticos."
+        // Validamos que el sistema tenga cargada la información de contacto (Capital) para auditoría
+        assert json.capital[0] != null : "Error: Datos de contacto obligatorios para riesgos complejos."
+    }
+}</scriptText></con:configuration></con:assertion><con:assertion type="GroovyScriptAssertion" id="7e96d016-aeee-4913-905e-d93bc13724ff" name="Sostenibilidad y Capacidad Agraria"><con:configuration><scriptText><![CDATA[import groovy.json.JsonSlurper
+def json = new JsonSlurper().parseText(messageExchange.responseContent)[0]
+
+def area = json.area
+def poblacion = json.population
+def nombre = json.name.common
+
+log.info "--- Evaluando Perfil Agro-Sostenible: ${nombre} ---"
+
+// Calculamos la Densidad (Personas por km2)
+def densidad = poblacion / area
+
+if (area > 500000 && densidad < 50) {
+    log.info "✅ PERFIL VERDE: País con alta capacidad de sostenibilidad y agricultura."
+    // En Majesco: Aplicar "Sustainability Discount"
+    assert json.landlocked == false : "Error: Para exportación agraria masiva, el acceso al mar es preferible."
+} else if (area < 50000 && densidad > 200) {
+    log.info "⚠️ RIESGO DE IMPORTACIÓN: Alta densidad, poca tierra. Requiere cláusula de suministro."
+    // En Majesco: Activar "Dependency Surcharge"
+    assert json.status == "officially-assigned" : "Error: Países con crisis potencial deben estar bajo estatus legal estricto."
+}]]></scriptText></con:configuration></con:assertion><con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:parameters/></con:restRequest></con:config></con:testStep><con:properties><con:property><con:name>TargetCountry</con:name><con:value>ar</con:value></con:property></con:properties></con:testCase><con:properties><con:property><con:name>HistorialPaises</con:name><con:value>ar,fr</con:value></con:property></con:properties></con:testSuite><con:properties/><con:wssContainer/><con:oAuth2ProfileContainer/><con:oAuth1ProfileContainer/></con:soapui-project>

@@ -1,0 +1,23 @@
+## 🛠️ Tech Stack & Projects
+* **SOAP Testing:** Football-SOAP project with Groovy Assertions.
+* **REST Testing (Postman):** Restful-Booker Collection with Environment 
+variables.
+* **Scripting:** Groovy (XML) & JavaScript (JSON).
+* **Database:** SQL Server (JDBC Cross-validation).
+* **AI Integration:** Ollama (Qwen2.5-Coder) for Synthetic Data.
+
+## 📬 Postman Features
+* **Automated Flow:** Scripts to capture `bookingid` and reuse it in 
+GET/DELETE requests.
+* **Environment Ready:** Includes `Booker-Environment.json` for instant 
+e# API 
+Automation Framework - Majesco Core 
+Integration
+
+## 🚀 Project Overview
+This repository contains an end-to-end automation framework for **Majesco I
+## 🛠️ Tech Stack
+* **Testing:** SoapUI (SOAP), Postman (REST).
+* **Scripting:** Groovy (Assertions).
+* **Database:** SQL Server (JDBC Cross-validation).
+* **AI:** Ollama (Local LLM: Qwen2.5-Coder) for Synthetic Da

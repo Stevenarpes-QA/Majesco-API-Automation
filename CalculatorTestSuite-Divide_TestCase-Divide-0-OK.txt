@@ -1,0 +1,51 @@
+Status: OK
+Time Taken: 262
+Size: 337
+Timestamp: Fri Apr 03 16:55:12 COT 2026
+TestStep: Divide
+
+----------------- Messages ------------------------------
+
+----------------- Properties ------------------------------
+Endpoint: http://www.dneonline.com/calculator.asmx
+Encoding: UTF-8
+
+---------------- Request ---------------------------
+Request Headers: SOAPAction : "http://tempuri.org/Divide"
+Connection : Keep-Alive
+User-Agent : Apache-HttpClient/4.5.5 (Java/17.0.18)
+Host : www.dneonline.com
+Accept-Encoding : gzip,deflate
+Content-Length : 292
+Content-Type : text/xml;charset=UTF-8
+
+
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:tem="http://tempuri.org/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <tem:Divide>
+         <tem:intA>34</tem:intA>
+         <tem:intB>470</tem:intB>
+      </tem:Divide>
+   </soapenv:Body>
+</soapenv:Envelope>
+
+---------------- Response --------------------------
+Response Headers: Cache-Control : private, max-age=0
+Server : Microsoft-IIS/10.0
+X-AspNet-Version : 2.0.50727
+Vary : Accept-Encoding
+#status# : HTTP/1.1 200 OK
+X-Powered-By-Plesk : PleskWin
+Date : Fri, 03 Apr 2026 21:55:12 GMT
+Content-Type : text/xml; charset=utf-8
+X-Powered-By : ASP.NET
+
+
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+   <soap:Body>
+      <DivideResponse xmlns="http://tempuri.org/">
+         <DivideResult>0</DivideResult>
+      </DivideResponse>
+   </soap:Body>
+</soap:Envelope>

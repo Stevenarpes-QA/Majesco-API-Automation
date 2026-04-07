@@ -19,5 +19,5 @@ jobs:
           tar -xzf soapui.tar.gz
       - name: Run SoapUI Tests
         continue-on-error: true
-        run: |
-          ./SoapUI-5.7.0/bin/testrunner.sh -s"Football_TestSuite" -r -j "${{ github.workspace }}/Football-SOAP-soapui-project.xml"
+       run: |
+          ./SoapUI-5.7.0/bin/testrunner.sh -r -j -f"${{ github.workspace }}/reports" "${{ github.workspace }}/Football-SOAP-soapui-project.xml"

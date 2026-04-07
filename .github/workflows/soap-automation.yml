@@ -20,4 +20,4 @@ jobs:
       - name: Run SoapUI Tests
         continue-on-error: true
         run: |
-          ./SoapUI-5.7.0/bin/testrunner.sh -s"TestSuite 1" -r -j "${{ github.workspace }}/Football-SOAP-soapui-project.xml"
+          ./SoapUI-5.7.0/bin/testrunner.sh -s"Football_TestSuite" -r -j "${{ github.workspace }}/Football-SOAP-soapui-project.xml"

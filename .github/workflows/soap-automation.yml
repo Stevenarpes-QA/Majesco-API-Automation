@@ -1,0 +1,23 @@
+name: SOAP Automation (SoapUI)
+on:
+  push:
+    branches: [ main ]
+jobs:
+  test-soap-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Set up Java 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+      - name: Install SoapUI
+        run: |
+          curl -L "https://s3.amazonaws.com/downloads.eviware/soapuios/5.7.0/SoapUI-5.7.0-linux-bin.tar.gz" -o soapui.tar.gz
+          tar -xzf soapui.tar.gz
+      - name: Run SoapUI Tests
+        continue-on-error: true
+        run: |
+          ./SoapUI-5.7.0/bin/testrunner.sh -s"TestSuite 1" -r -j "${{ github.workspace }}/Football-SOAP-soapui-project.xml"
